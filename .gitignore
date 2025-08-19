@@ -2,3 +2,4 @@
 *.terr*
 .terraform/
 **/.terraform/
+.git*
