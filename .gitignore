@@ -1,5 +1,0 @@
-*.txt
-*.terr*
-.terraform/
-**/.terraform/
-.git*
