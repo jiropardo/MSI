@@ -1,31 +1,23 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
 - main
-
-# variables:
-#   - name: account_id
-#     value: $(account_id)        # Secret variable set in pipeline or variable group
-#   - name: azure_tenant_id
-#     value: $(azure_tenant_id)   # Secret variable set in pipeline or variable group
 
 stages:
 - stage: Checkout
   displayName: 'Checkout code'
   jobs:
-  - job: CheckoutJob
-    displayName: 'Checkout Repo'
+  - deployment: CheckoutJob
+    displayName: 'Checkout Repo on VM'
     environment:
       name: test
       resourceName: jiro-vm
       resourceType: virtualMachine
-    steps:
-      - checkout: self
-      - publish: $(Build.SourcesDirectory)
-        artifact: source-code
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - checkout: self
+            - publish: $(Build.SourcesDirectory)
+              artifact: source-code
 
 - stage: Plan
   displayName: 'Terraform Plan'
@@ -41,18 +33,18 @@ stages:
       runOnce:
         deploy:
           steps:
-          - download: current
-            artifact: source-code
+            - download: current
+              artifact: source-code
 
-          - script: |
-              cd $(Pipeline.Workspace)/source-code
-              terraform --version
-              terraform init
-              terraform plan -out=tfplan -var="account_id=$ACCOUNT_ID" -var="azure_tenant_id=$AZURE_TENANT_ID"
-            env:
-              ACCOUNT_ID: $(account_id)
-              AZURE_TENANT_ID: $(azure_tenant_id)
-            displayName: 'Terraform Init and Plan'
+            - script: |
+                cd $(Pipeline.Workspace)/source-code
+                terraform --version
+                terraform init
+                terraform plan -out=tfplan -var="account_id=$ACCOUNT_ID" -var="azure_tenant_id=$AZURE_TENANT_ID"
+              env:
+                ACCOUNT_ID: $(account_id)
+                AZURE_TENANT_ID: $(azure_tenant_id)
+              displayName: 'Terraform Init and Plan'
 
 - stage: Deploy
   displayName: 'Terraform Apply'
@@ -68,15 +60,15 @@ stages:
       runOnce:
         deploy:
           steps:
-          - download: current
-            artifact: source-code
+            - download: current
+              artifact: source-code
 
-          - script: |
-              cd $(Pipeline.Workspace)/source-code
-              terraform --version
-              terraform init
-              terraform apply -auto-approve -var="account_id=$ACCOUNT_ID" -var="azure_tenant_id=$AZURE_TENANT_ID" tfplan
-            env:
-              ACCOUNT_ID: $(account_id)
-              AZURE_TENANT_ID: $(azure_tenant_id)
-            displayName: 'Terraform Init and Apply'
+            - script: |
+                cd $(Pipeline.Workspace)/source-code
+                terraform --version
+                terraform init
+                terraform apply -auto-approve -var="account_id=$ACCOUNT_ID" -var="azure_tenant_id=$AZURE_TENANT_ID" tfplan
+              env:
+                ACCOUNT_ID: $(account_id)
+                AZURE_TENANT_ID: $(azure_tenant_id)
+              displayName: 'Terraform Init and Apply'
