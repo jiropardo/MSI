@@ -71,4 +71,6 @@ stages:
               env:
                 ACCOUNT_ID: $(account_id)
                 AZURE_TENANT_ID: $(azure_tenant_id)
+                TF_LOG: DEBUG
+                TF_LOG_PATH: $(Pipeline.Workspace)/terraform-apply-debug.log
               displayName: 'Terraform Init and Apply'
