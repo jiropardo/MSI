@@ -19,36 +19,36 @@ stages:
             - publish: $(Build.SourcesDirectory)
               artifact: source-code
 
-- stage: Plan
-  displayName: 'Terraform Plan'
-  dependsOn: Checkout
-  jobs:
-  - deployment: TerraformPlan
-    displayName: 'Terraform Plan on Self-Hosted VM'
-    environment:
-      name: test
-      resourceName: jiro-vm
-      resourceType: virtualMachine
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-            - download: current
-              artifact: source-code
+# - stage: Plan
+#   displayName: 'Terraform Plan'
+#   dependsOn: Checkout
+#   jobs:
+#   - deployment: TerraformPlan
+#     displayName: 'Terraform Plan on Self-Hosted VM'
+#     environment:
+#       name: test
+#       resourceName: jiro-vm
+#       resourceType: virtualMachine
+#     strategy:
+#       runOnce:
+#         deploy:
+#           steps:
+#             - download: current
+#               artifact: source-code
 
-            - script: |
-                cd $(Pipeline.Workspace)/source-code
-                terraform --version
-                terraform init
-                terraform plan -out=tfplan -var="account_id=$ACCOUNT_ID" -var="azure_tenant_id=$AZURE_TENANT_ID"
-              env:
-                ACCOUNT_ID: $(account_id)
-                AZURE_TENANT_ID: $(azure_tenant_id)
-              displayName: 'Terraform Init and Plan'
+#             - script: |
+#                 cd $(Pipeline.Workspace)/source-code
+#                 terraform --version
+#                 terraform init
+#                 terraform plan -out=tfplan -var="account_id=$ACCOUNT_ID" -var="azure_tenant_id=$AZURE_TENANT_ID"
+#               env:
+#                 ACCOUNT_ID: $(account_id)
+#                 AZURE_TENANT_ID: $(azure_tenant_id)
+#               displayName: 'Terraform Init and Plan'
 
 - stage: Deploy
   displayName: 'Terraform Apply'
-  dependsOn: Plan
+  dependsOn: Checkout
   jobs:
   - deployment: TerraformApply
     displayName: 'Terraform Apply on Self-Hosted VM'
@@ -67,10 +67,13 @@ stages:
                 cd $(Pipeline.Workspace)/source-code
                 terraform --version
                 terraform init
-                terraform apply -auto-approve -var="account_id=$ACCOUNT_ID" -var="azure_tenant_id=$AZURE_TENANT_ID" tfplan
+                echo "Running Terraform Apply with DEBUG logging..."
+                terraform apply -auto-approve -var="account_id=$ACCOUNT_ID" -var="azure_tenant_id=$AZURE_TENANT_ID"
+                echo "Apply completed"
+                ls -l /home/adminuser/terraform-apply-debug.log || echo "Apply debug log not found"
               env:
                 ACCOUNT_ID: $(account_id)
                 AZURE_TENANT_ID: $(azure_tenant_id)
                 TF_LOG: DEBUG
-                TF_LOG_PATH: $(Pipeline.Workspace)/terraform-apply-debug.log
-              displayName: 'Terraform Init and Apply'
+                TF_LOG_PATH: /home/adminuser/terraform-apply-debug.log
+              displayName: 'Terraform Init and Apply with logs'
